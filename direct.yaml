@@ -25,6 +25,9 @@ payload:
   - DOMAIN-SUFFIX,azsora.japaneast.cloudapp.azure.com
   - DOMAIN-KEYWORD,_adb-tls-connect
   - DOMAIN-SUFFIX,taobeiv.cn
+  - DOMAIN-SUFFIX,letsencrypt.org
+  - DOMAIN-SUFFIX,argotunnel.com
+  - DOMAIN-SUFFIX,hf-mirror.com
   - IP-CIDR,8.148.211.247/32,no-resolve
   - IP-CIDR,18.163.126.16/32,no-resolve
   - IP-CIDR,34.80.220.218/32,no-resolve
