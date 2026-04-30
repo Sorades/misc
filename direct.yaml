@@ -28,6 +28,7 @@ payload:
   - DOMAIN-SUFFIX,letsencrypt.org
   - DOMAIN-SUFFIX,argotunnel.com
   - DOMAIN-SUFFIX,hf-mirror.com
+  - DOMAIN-SUFFIX,api.longcat.chat
   - IP-CIDR,8.148.211.247/32,no-resolve
   - IP-CIDR,18.163.126.16/32,no-resolve
   - IP-CIDR,34.80.220.218/32,no-resolve
