@@ -1,0 +1,28 @@
+# ~/.config/helix/config.toml
+
+theme = "catppuccin_mocha"
+
+[editor]
+true-color = true
+line-number = "relative"
+mouse = true
+bufferline = "multiple"
+completion-timeout = 100
+idle-timeout = 250
+
+[editor.statusline]
+left = ["mode", "spinner", "file-name", "read-only-indicator", "file-modification-indicator"]
+center = []
+right = ["diagnostics", "selections", "position", "file-encoding", "file-line-ending", "file-type"]
+
+[editor.cursor-shape]
+normal = "block"
+insert = "bar"
+select = "underline"
+
+[editor.lsp]
+display-messages = true
+
+[keys.normal]
+C-s = ":write"
+C-q = ":quit"
