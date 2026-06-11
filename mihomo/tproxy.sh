@@ -21,16 +21,13 @@ BYPASS_IPRANGES=(
     "192.168.0.0/16"
     "224.0.0.0/4"
     "240.0.0.0/4"
-)
+    "8.148.211.247/32"
+    )
 
-BYPASS_IP6RANGES=(
-    "::/128"
-    "::1/128"
-    "fc00::/7"
-    "fe80::/10"
-    "ff00::/8"
-    "2001:250:4001:108::/64"
-)
+# # 代理IP范围
+# PROXY_IPRANGES=(
+#     "$FAKE_IP_RANGE"
+# )
 
 setup_nftables() {
     # 初始化规则表
@@ -100,50 +97,16 @@ setup_nftables() {
     nft add rule ip clash output meta l4proto {tcp, udp} mark set $MARK_VALUE
 }
 
-setup_nftables_v6() {
-    nft add table ip6 clash6
-    nft flush table ip6 clash6
-
-    nft add set ip6 clash6 bypass6 { type ipv6_addr \; flags interval \; }
-    for iprange in "${BYPASS_IP6RANGES[@]}"; do
-        nft add element ip6 clash6 bypass6 { $iprange }
-    done
-
-    ## IPv6 DNS 流量拦截：LAN 设备
-    nft add chain ip6 clash6 dns_prerouting { type nat hook prerouting priority dstnat \; }
-    nft add rule ip6 clash6 dns_prerouting meta l4proto udp udp dport 53 redirect to $CLASH_DNS_PORT
-    nft add rule ip6 clash6 dns_prerouting meta l4proto tcp tcp dport 53 redirect to $CLASH_DNS_PORT
-
-    ## IPv6 局域网流量代理
-    nft add chain ip6 clash6 prerouting { type filter hook prerouting priority mangle \; }
-
-    # 已经建立连接的 TCP 流量无需再检查
-    nft add rule ip6 clash6 prerouting meta l4proto tcp socket transparent 1 meta mark set $MARK_VALUE accept
-
-    # 绕过 IPv6 私网、本地链路、多播、LAN 前缀
-    nft add rule ip6 clash6 prerouting ip6 daddr @bypass6 return
-
-    # TCP/UDP 进入 mihomo tproxy-port
-    nft add rule ip6 clash6 prerouting meta l4proto { tcp, udp } meta mark set $MARK_VALUE tproxy to :$CLASH_TPROXY_PORT
-}
-
 # 将本机流量下一跳跳入回环, 使其走入prerouting完成tproxy, 设置socket transparent属性以保证tproxy可用
 setup_route() {
     ip route add local 0.0.0.0/0 dev lo table $ROUTE_TABLE
     ip rule add fwmark $MARK_VALUE table $ROUTE_TABLE pref $IP_RULE_PREF
-
-    ip -6 route replace local ::/0 dev lo table $ROUTE_TABLE
-    ip -6 rule add fwmark $MARK_VALUE table $ROUTE_TABLE pref $IP_RULE_PREF 2>/dev/null || true
 }
 
 cleanup_route() {
     ip rule del fwmark $MARK_VALUE table $ROUTE_TABLE pref $IP_RULE_PREF 2>/dev/null || true
     ip rule del fwmark $MARK_VALUE table $ROUTE_TABLE 2>/dev/null || true
     ip route flush table $ROUTE_TABLE 2>/dev/null || true
-
-    ip -6 rule del fwmark $MARK_VALUE table $ROUTE_TABLE pref $IP_RULE_PREF 2>/dev/null || true
-    ip -6 rule del fwmark $MARK_VALUE table $ROUTE_TABLE 2>/dev/null || true
-    ip -6 route flush table $ROUTE_TABLE 2>/dev/null || true
 }
 
 cleanup_nftables() {
@@ -152,12 +115,10 @@ cleanup_nftables() {
         resolvectl flush-caches 2>/dev/null || true
     fi
     nft delete table ip clash 2>/dev/null || true
-    nft delete table ip6 clash6 2>/dev/null || true
 }
 
 start() {
     setup_nftables
-    setup_nftables_v6
     setup_route
 }
 
@@ -167,23 +128,14 @@ stop() {
 }
 
 status() {
-    echo "当前 IPv4 nftables 规则:"
-    nft list table ip clash 2>/dev/null || echo "IPv4 透明代理未启动"
-
-    echo -e "\n当前 IPv6 nftables 规则:"
-    nft list table ip6 clash6 2>/dev/null || echo "IPv6 透明代理未启动"
+    echo "当前nftables规则:"
+    nft list table ip clash 2>/dev/null || echo "透明代理未启动"
     
-    echo -e "\n当前 IPv4 路由规则:"
-    ip rule list | grep $MARK_VALUE || echo "没有 IPv4 相关路由规则"
+    echo -e "\n当前路由规则:"
+    ip rule list | grep $MARK_VALUE || echo "没有相关路由规则"
     
-    echo -e "\n当前 IPv4 路由表($ROUTE_TABLE):"
-    ip route list table $ROUTE_TABLE 2>/dev/null || echo "IPv4 路由表为空"
-
-    echo -e "\n当前 IPv6 路由规则:"
-    ip -6 rule list | grep $MARK_VALUE || echo "没有 IPv6 相关路由规则"
-
-    echo -e "\n当前 IPv6 路由表($ROUTE_TABLE):"
-    ip -6 route list table $ROUTE_TABLE 2>/dev/null || echo "IPv6 路由表为空"
+    echo -e "\n当前路由表($ROUTE_TABLE):"
+    ip route list table $ROUTE_TABLE 2>/dev/null || echo "路由表为空"
 }
 
 case "$1" in
