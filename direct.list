@@ -30,6 +30,9 @@ DOMAIN-SUFFIX,argotunnel.com
 DOMAIN-SUFFIX,hf-mirror.com
 DOMAIN-SUFFIX,longcat.chat
 IP-CIDR,8.148.211.247/32,no-resolve
-IP-CIDR,18.163.126.16/32,no-resolve
-IP-CIDR,34.80.220.218/32,no-resolve
-IP-CIDR,34.64.34.40/32,no-resolve
+IP-CIDR,47.237.200.116 /32,no-resolve
+IP-CIDR,48.218.164.203/32,no-resolve
+IP-CIDR,158.178.230.36/32,no-resolve
+IP-CIDR,35.201.237.236/32,no-resolve
+IP-CIDR,57.155.88.202/32,no-resolve
+IP-CIDR,34.150.4.243/32,no-resolve
