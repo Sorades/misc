@@ -15,14 +15,16 @@ IP_RULE_PREF=9000
 # 绕过IP范围
 BYPASS_IPRANGES=(
     "0.0.0.0/8"
+    #"10.0.0.0/8"
+    "10.0.0.9/32"
     "127.0.0.0/8"
     "169.254.0.0/16"
     "172.16.0.0/12"
     "192.168.0.0/16"
     "224.0.0.0/4"
     "240.0.0.0/4"
-    "8.148.211.247/32"
-    )
+    "100.114.0.0/16"
+)
 
 # # 代理IP范围
 # PROXY_IPRANGES=(
@@ -66,15 +68,19 @@ setup_nftables() {
         # CLASH放行
         nft add rule ip clash dns_output skuid $CLASH_USER return
         nft add rule ip clash dns_output skgid $CLASH_GROUP return
-    # Tailscale放行
-    nft add rule ip clash dns_output meta mark \& 0xff0000 == 0x80000 return
-    # 其余流量全部劫持
+        # Tailscale放行
+        nft add rule ip clash dns_output meta mark \& 0xff0000 == 0x80000 return
+        # new: netbird
+        nft add rule ip clash dns_output meta mark 0x1bd00 return
+                
+        # 其余流量全部劫持
         nft add rule ip clash dns_output ip protocol udp udp dport 53 redirect to $CLASH_DNS_PORT
         nft add rule ip clash dns_output ip protocol tcp tcp dport 53 redirect to $CLASH_DNS_PORT
     fi
 
     ## 局域网流量代理
     nft add chain ip clash prerouting { type filter hook prerouting priority mangle \; }
+
     # 已经建立连接的 TCP 流量无需再检查
     nft add rule ip clash prerouting meta l4proto tcp socket transparent 1 meta mark set $MARK_VALUE accept
     # 绕过IP范围不代理
@@ -90,6 +96,10 @@ setup_nftables() {
     nft add rule ip clash output skgid $CLASH_GROUP return
     # Tailscale bypass mark 不代理
     nft add rule ip clash output meta mark \& 0xff0000 == 0x80000 return
+
+    # new: netbird
+    nft add rule ip clash output meta mark 0x1bd00 return
+
     # 绕过IP范围不代理
     nft add rule ip clash output ip daddr @$BYPASS_IPSET_NAME return
     # 配合ip route重路由至prerouting
